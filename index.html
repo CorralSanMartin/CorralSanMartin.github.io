@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Genealogía</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="logo.png">
+  <!-- Ícono al agregar a la pantalla de inicio en iPhone/iPad -->
+  <link rel="apple-touch-icon" href="logo.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Genealogía">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#f5f5f7">
+
+  <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Cabecera iOS -->
+  <header>
+    <div class="header-left">
+      <img src="logo.png" alt="Logo" class="logo-nav" onclick="irInicio()">
+      <button id="btn-back" class="btn-icon oculto" onclick="irInicio()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+      <h1 id="header-titulo">Genealogía</h1>
+    </div>
+    
+    <div class="header-right">
+      <button id="btn-login-header" class="btn-icon" onclick="mostrarLogin()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+      </button>
+      <button id="btn-logout" class="btn-icon oculto" onclick="cerrarSesion()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="container">
+    
+    <!-- VISTA 1: INICIO (Menú Principal) -->
+    <div id="vista-inicio" class="vista">
+      <div id="cargando" class="cargando">
+        <span class="spinner"></span> Cargando base de datos…
+      </div>
+      <div class="menu-grid">
+        <button class="menu-btn" onclick="mostrarVista('vista-buscar', 'Buscar')">
+          <span class="icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          </span> Buscar
+        </button>
+        <button class="menu-btn" onclick="mostrarVista('vista-lista', 'Directorio')">
+          <span class="icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3.5" y1="6" x2="3.51" y2="6"></line><line x1="3.5" y1="12" x2="3.51" y2="12"></line><line x1="3.5" y1="18" x2="3.51" y2="18"></line></svg>
+          </span> Ver Lista
+        </button>
+        <button class="menu-btn" onclick="mostrarVista('vista-arbol', 'Árbol')">
+          <span class="icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.5"></circle><circle cx="5" cy="19" r="2.5"></circle><circle cx="19" cy="19" r="2.5"></circle><path d="M12 7.5V11M5 16.5V11h14v5.5"></path></svg>
+          </span> Árbol Genealógico
+        </button>
+        <!-- AQUÍ ESTÁ EL CAMBIO: Llama a prepararNuevoRegistro() -->
+        <button class="menu-btn admin-solo oculto" onclick="prepararNuevoRegistro()">
+          <span class="icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </span> Agregar Gallos
+        </button>
+      </div>
+    </div>
+
+    <!-- VISTA 2: BUSCAR -->
+    <div id="vista-buscar" class="vista oculto panel-cristal">
+      <input type="search" id="inputBuscar" class="search-bar" placeholder="Buscar por placa o nombre..." onkeyup="filtrarBusqueda()">
+      <div id="resultados-busqueda" class="lista-ios"></div>
+    </div>
+
+    <!-- VISTA 3: LISTA COMPLETA -->
+    <div id="vista-lista" class="vista oculto panel-cristal">
+      <div id="contenedor-lista" class="lista-ios"></div>
+    </div>
+
+    <!-- VISTA 4: ÁRBOL -->
+    <div id="vista-arbol" class="vista oculto panel-cristal">
+      <div class="arbol-header">
+        <p class="subtitle">Toca un nodo para ver detalles</p>
+        <button onclick="dibujarNodos()" class="btn-small">Centrar</button>
+      </div>
+      <div id="red-nodos"></div>
+    </div>
+
+    <!-- VISTA 5: FORMULARIO (Solo Admin) -->
+    <div id="vista-formulario" class="vista oculto panel-cristal">
+      <input type="hidden" id="inputModo" value="agregar">
+      <div class="input-group"><label>Placa(s) separadas por coma</label><input type="text" id="inputPlacas" placeholder="Ej: 101, 102"></div>
+      <div class="input-group"><label>Nombre (Opcional)</label><input type="text" id="inputNombre"></div>
+      <div class="input-group"><label>Sexo</label>
+        <select id="selectSexo"><option value="Gallo">Gallo</option><option value="Gallina">Gallina</option><option value="Por definir">Por definir</option></select>
+      </div>
+      <div class="row-inputs">
+        <div class="input-group"><label>Placa Padre</label><input type="text" id="inputPadre" placeholder="Opcional"></div>
+        <div class="input-group"><label>Placa Madre</label><input type="text" id="inputMadre" placeholder="Opcional"></div>
+      </div>
+      <div class="input-group"><label>Fecha Nacimiento</label><input type="date" id="inputFecha"></div>
+      <div class="botones-form">
+        <button onclick="guardarFormulario()" class="btn-primary">Guardar</button>
+        <button onclick="cancelarEdicion()" id="btn-cancelar" class="oculto btn-secondary">Cancelar</button>
+      </div>
+      <p id="mensaje-estado"></p>
+    </div>
+
+  </div>
+
+  <!-- Modal Detalle Gallo -->
+  <div id="modal-nodo" class="modal oculto">
+    <div class="modal-contenido">
+      <div class="modal-drag-handle"></div>
+      <h3 id="modal-titulo">Detalles</h3>
+      <div id="modal-info" class="info-card"></div>
+
+      <div class="arbol-seccion">
+        <h4 class="arbol-label">Antecedentes</h4>
+        <div id="mini-antecedentes" class="mini-red"></div>
+      </div>
+      <div class="arbol-seccion">
+        <h4 class="arbol-label">Descendientes</h4>
+        <div id="mini-descendientes" class="mini-red"></div>
+      </div>
+
+      <div class="admin-solo oculto modal-actions">
+        <button onclick="prepararEdicion()" class="btn-secondary">Editar</button>
+        <button onclick="eliminarNodoSeleccionado()" class="btn-danger">Borrar Registro</button>
+      </div>
+      <button onclick="cerrarModal('modal-nodo')" class="btn-close">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- Modal Login -->
+  <div id="modal-login" class="modal oculto">
+    <div class="modal-contenido login-box">
+      <h3>Acceso Restringido</h3>
+      <p class="subtitle">Ingresa tu contraseña para editar.</p>
+      <input type="password" id="inputPassword" placeholder="Contraseña">
+      <button onclick="iniciarSesion()" class="btn-primary">Ingresar</button>
+      <button onclick="cerrarModal('modal-login')" class="btn-close">Cancelar</button>
+      <p id="mensaje-login" class="error"></p>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
