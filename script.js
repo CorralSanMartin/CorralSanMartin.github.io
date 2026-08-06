@@ -208,6 +208,7 @@ function dibujarNodos() {
     nodos.push({
       id: g.placa, label: `Placa ${g.placa}\n${nombreParaMostrar(g)}`,
       shape: "box", margin: 14,
+      widthConstraint: { maximum: 150 }, // nombres largos bajan de línea, no ensanchan
       color: { background: colorBg, border: colorBorder, highlight: { background: "#fff", border: "#0071e3" } },
       font: { face: "-apple-system, sans-serif", color: "#1d1d1f", size: 14 },
       shapeProperties: { borderRadius: 12 }
@@ -220,7 +221,7 @@ function dibujarNodos() {
   const contenedor = document.getElementById("red-nodos");
   if (network !== null) network.destroy();
   network = new vis.Network(contenedor, { nodes: nodos, edges: conexiones }, {
-    layout: { hierarchical: { direction: "UD", sortMethod: "directed", levelSeparation: 120, nodeSpacing: 150 } },
+    layout: { hierarchical: { direction: "UD", sortMethod: "directed", levelSeparation: 140, nodeSpacing: 220, blockShifting: true, parentCentralization: true } },
     interaction: { hover: true },
     edges: { smooth: { type: 'cubicBezier', forceDirection: 'vertical', roundness: 0.5 } }
   });
@@ -348,6 +349,7 @@ function estiloNodoGallo(g, resaltar) {
     id: String(g.placa),
     label: `Placa ${g.placa}\n${nombreParaMostrar(g)}`,
     shape: "box", margin: 12,
+    widthConstraint: { maximum: 130 }, // evita cajas anchas con nombres largos
     borderWidth: resaltar ? 3 : 1,
     color: {
       background: resaltar ? "#fff7d6" : colorBg,
@@ -416,7 +418,7 @@ function dibujarMiniArbol(contenedorId, relacionados, galloCentro, tipo) {
   });
 
   const red = new vis.Network(contenedor, { nodes: nodos, edges: edges }, {
-    layout: { hierarchical: { direction: "UD", sortMethod: "directed", levelSeparation: 90, nodeSpacing: 120 } },
+    layout: { hierarchical: { direction: "UD", sortMethod: "directed", levelSeparation: 100, nodeSpacing: 170, blockShifting: true, parentCentralization: true } },
     interaction: { hover: false, dragNodes: false },
     physics: false,
     edges: { smooth: { type: 'cubicBezier', forceDirection: 'vertical', roundness: 0.5 } }
