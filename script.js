@@ -68,6 +68,48 @@ function irInicio() {
 }
 
 // ==========================================
+// NOMBRE A MOSTRAR (deriva de los padres si no tiene nombre)
+// Formato: "Papá-Mamá"  (izquierda = padre, derecha = madre)
+// Si un ancestro sin nombre se usa como componente, su guion se quita
+// para que el único guion sea el que separa padre de madre en esa generación.
+// ==========================================
+function tieneNombreReal(g) {
+  const n = (g && g.nombre ? String(g.nombre) : "").trim();
+  return n !== "" && n.toLowerCase() !== "sin nombre";
+}
+
+function quitarGuion(texto) {
+  // El guion interno se reemplaza por un espacio (RojoBlanca -> Rojo Blanca)
+  return String(texto).replace(/-/g, " ").trim();
+}
+
+function nombreDerivado(g, esComponente, visitados) {
+  if(!g) return "?";
+  if(tieneNombreReal(g)) return String(g.nombre).trim();
+
+  visitados = visitados || new Set();
+  if(visitados.has(String(g.placa))) return String(g.placa); // corta ciclos
+  visitados.add(String(g.placa));
+
+  const padreObj = buscarGallo(g.padre);
+  const madreObj = buscarGallo(g.madre);
+  const hayPadre = padreObj || (g.padre && g.padre !== "undefined" && String(g.padre).trim() !== "");
+  const hayMadre = madreObj || (g.madre && g.madre !== "undefined" && String(g.madre).trim() !== "");
+
+  if(hayPadre || hayMadre) {
+    const parteP = padreObj ? quitarGuion(nombreDerivado(padreObj, true, visitados)) : (hayPadre ? String(g.padre) : "?");
+    const parteM = madreObj ? quitarGuion(nombreDerivado(madreObj, true, visitados)) : (hayMadre ? String(g.madre) : "?");
+    return parteP + "-" + parteM;
+  }
+  // Sin nombre y sin padres: como componente usamos la placa; suelto, "Sin nombre".
+  return esComponente ? String(g.placa) : "Sin nombre";
+}
+
+function nombreParaMostrar(g) {
+  return nombreDerivado(g, false, new Set());
+}
+
+// ==========================================
 // LISTAS Y BÚSQUEDAS
 // ==========================================
 function renderizarLista(arrayGallos, contenedorId) {
@@ -88,7 +130,7 @@ function renderizarLista(arrayGallos, contenedorId) {
     div.innerHTML = `
       <div class="list-item-info">
         <span class="list-item-title">Placa: ${g.placa}</span>
-        <span class="list-item-sub">${g.nombre || 'Sin nombre'}</span>
+        <span class="list-item-sub">${nombreParaMostrar(g)}</span>
       </div>
       <span class="badge ${claseBadge}">${g.sexo}</span>
     `;
@@ -105,7 +147,8 @@ function filtrarBusqueda() {
   }
   const filtrados = todosLosGallos.filter(g =>
     String(g.placa).toLowerCase().includes(texto) ||
-    (g.nombre && String(g.nombre).toLowerCase().includes(texto))
+    (g.nombre && String(g.nombre).toLowerCase().includes(texto)) ||
+    nombreParaMostrar(g).toLowerCase().includes(texto)
   );
   renderizarLista(filtrados, 'resultados-busqueda');
 }
@@ -163,7 +206,7 @@ function dibujarNodos() {
     let colorBorder = g.sexo === "Gallina" ? "#ffb3c6" : (g.sexo === "Gallo" ? "#b3d4ff" : "#d2d2d7");
     
     nodos.push({
-      id: g.placa, label: `Placa ${g.placa}\n${g.nombre}`, 
+      id: g.placa, label: `Placa ${g.placa}\n${nombreParaMostrar(g)}`,
       shape: "box", margin: 14,
       color: { background: colorBg, border: colorBorder, highlight: { background: "#fff", border: "#0071e3" } },
       font: { face: "-apple-system, sans-serif", color: "#1d1d1f", size: 14 },
@@ -274,7 +317,7 @@ function abrirModalNodo(placa) {
 
   const infoHTML = `
     <b>Placa</b> ${nodoActual.placa}<br>
-    <b>Nombre</b> ${nodoActual.nombre || 'N/A'}<br>
+    <b>Nombre</b> ${nombreParaMostrar(nodoActual)}<br>
     <b>Sexo</b> ${nodoActual.sexo}<br>
     <b>Padres</b> ${nodoActual.padre || "N/A"} / ${nodoActual.madre || "N/A"}<br>
     <b>Nació</b> ${nodoActual.fechaNac ? new Date(nodoActual.fechaNac).toLocaleDateString('es-ES') : "Sin registro"}
@@ -303,7 +346,7 @@ function estiloNodoGallo(g, resaltar) {
   const colorBorder = g.sexo === "Gallina" ? "#ffb3c6" : (g.sexo === "Gallo" ? "#b3d4ff" : "#d2d2d7");
   return {
     id: String(g.placa),
-    label: `Placa ${g.placa}\n${g.nombre || ''}`.trim(),
+    label: `Placa ${g.placa}\n${nombreParaMostrar(g)}`,
     shape: "box", margin: 12,
     borderWidth: resaltar ? 3 : 1,
     color: {
